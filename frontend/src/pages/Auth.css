@@ -1,0 +1,71 @@
+.auth-container {
+  min-height: calc(100vh - 70px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.auth-card {
+  max-width: 450px;
+  width: 100%;
+}
+
+.auth-title {
+  font-size: 32px;
+  color: #e2e8f0;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.auth-subtitle {
+  color: #94a3b8;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.btn-full {
+  width: 100%;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 24px;
+  color: #94a3b8;
+}
+
+.auth-footer a {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+}
+
+/* ============================================
+   LIGHT THEME - Auth Pages
+   ============================================ */
+
+:root[data-theme='light'] .auth-title {
+  color: #0f1728;
+}
+
+:root[data-theme='light'] .auth-subtitle {
+  color: #475569;
+}
+
+:root[data-theme='light'] .auth-footer {
+  color: #64748b;
+}
+
+:root[data-theme='light'] .auth-footer a {
+  color: #2563eb;
+}
+
+:root[data-theme='light'] .auth-footer a:hover {
+  color: #1d4ed8;
+}
