@@ -10,14 +10,21 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 60000, // 60 second timeout for AI generation
 });
 
 // Add token to requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
+    console.log('🔑 API Request to:', config.url);
+    console.log('   Token in localStorage:', token ? `${token.substring(0, 20)}...` : 'NONE');
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('   ✅ Authorization header SET');
+    } else {
+      console.log('   ⚠️  No token - request will be UNAUTHENTICATED');
     }
     return config;
   },
@@ -28,16 +35,24 @@ api.interceptors.request.use(
 
 // Response interceptor for better error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('✅ API Response received from:', response.config.url);
+    console.log('   Status:', response.status);
+    console.log('   Data:', response.data);
+    return response;
+  },
   (error) => {
-    console.error('🔴 API Error Interceptor:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      message: error.message,
-      url: error.config?.url,
-      method: error.config?.method
-    });
+    const token = localStorage.getItem('token');
+    console.error('🔴 API Error Interceptor - Full Details:');
+    console.error('Status:', error.response?.status);
+    console.error('Status Text:', error.response?.statusText);
+    console.error('Response Data:', error.response?.data);
+    console.error('Error Message:', error.message);
+    console.error('Request URL:', error.config?.url);
+    console.error('Request Method:', error.config?.method);
+    console.error('Token Exists:', !!token);
+    console.error('Auth Header:', error.config?.headers?.Authorization ? 'YES' : 'NO');
+    console.error('Full Error Object:', error);
     return Promise.reject(error);
   }
 );
@@ -46,7 +61,7 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
-  getCurrentUser: () => api.get('/auth/me'),
+  getCurrentUser: (signal) => api.get('/auth/me', { signal }),
   updateProfile: (data) => api.put('/auth/profile', data),
   getUserByHandle: (handle) => api.get(`/auth/users/${handle}`),
 };
@@ -82,7 +97,7 @@ export const leaderboardAPI = {
 
 // Profile APIs
 export const profileAPI = {
-  getProfile: () => api.get('/profile'),
+  getProfile: (signal) => api.get('/profile', { signal }),
   updateProfile: (data) => api.put('/profile', data),
   deleteAllHistory: () => api.delete('/profile/history/all'),
 };
@@ -110,9 +125,14 @@ export const classroomAPI = {
 export const paymentAPI = {
   createOrder: (data) => api.post('/payments/create-order', data),
   verifyPayment: (data) => api.post('/payments/verify-payment', data),
-  getSubscription: () => api.get('/payments/subscription'),
+  getSubscription: (signal) => api.get('/payments/subscription', { signal }),
   getFreeTests: () => api.get('/payments/free-tests'),
   getPaymentHistory: (query = {}) => api.get('/payments/history', { params: query }),
+};
+
+// Dashboard APIs
+export const dashboardAPI = {
+  getAnalytics: () => api.get('/dashboard/analytics'),
 };
 
 export default api;

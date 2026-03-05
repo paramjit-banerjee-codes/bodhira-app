@@ -1,0 +1,88 @@
+.join-container {
+  min-height: calc(100vh - 70px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.join-card {
+  max-width: 600px;
+  width: 100%;
+  padding: 40px;
+}
+
+.join-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.join-header h1 {
+  font-size: 36px;
+  color: #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.join-header p {
+  color: #94a3b8;
+  font-size: 16px;
+}
+
+.join-info {
+  margin-top: 32px;
+  padding-top: 32px;
+  border-top: 1px solid #334155;
+}
+
+.join-info h3 {
+  color: #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.join-info ul {
+  list-style: none;
+  padding: 0;
+}
+
+.join-info li {
+  padding: 12px 0;
+  color: #94a3b8;
+  position: relative;
+  padding-left: 28px;
+}
+
+.join-info li:before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: #3b82f6;
+  font-weight: bold;
+}
+
+/* ============================================
+   LIGHT THEME - JoinTest Page
+   ============================================ */
+
+:root[data-theme='light'] .join-header h1 {
+  color: #0f1728;
+}
+
+:root[data-theme='light'] .join-header p {
+  color: #475569;
+}
+
+:root[data-theme='light'] .join-info {
+  border-top-color: rgba(203, 213, 225, 0.3);
+}
+
+:root[data-theme='light'] .join-info h3 {
+  color: #0f1728;
+}
+
+:root[data-theme='light'] .join-info li {
+  color: #64748b;
+}
+
+:root[data-theme='light'] .join-info li:before {
+  color: #2563eb;
+}

@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Trash2, Plus } from 'lucide-react';
+import { Eye, Trash2, Plus, Search, FileText, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { classroomAPI, testAPI } from '../services/api';
-import ConfirmationModal from './ConfirmationModal';
+import EmptyState from './EmptyState';
+import LoadingSkeleton from './LoadingSkeleton';
 import toast from '../utils/toast';
-import '../pages/GenerateTest.css';
-import './ClassroomTests.css';
+import './TestsTab.css';
 
 export default function TestsTab({ classroom, isTeacher }) {
   const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [tests, setTests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -32,16 +33,10 @@ export default function TestsTab({ classroom, isTeacher }) {
   });
   console.log('====================================\n');
 
-  if (!classroom) {
-    return (
-      <div className="text-center py-12 text-slate-400">
-        <p>Loading classroom...</p>
-      </div>
-    );
-  }
-
   useEffect(() => {
-    fetchTests();
+    if (classroom) {
+      fetchTests();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classroom]);
 
@@ -93,34 +88,25 @@ export default function TestsTab({ classroom, isTeacher }) {
   };
 
   const handleDelete = async (testId) => {
-    setTestToDelete(testId);
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!testToDelete) return;
+    if (!window.confirm('Are you sure you want to delete this test? This action cannot be undone.')) {
+      return;
+    }
     
     try {
-      console.log('🗑️ Delete clicked for test:', testToDelete);
-      setActionLoading({ ...actionLoading, [testToDelete]: true });
-      const response = await testAPI.deleteTest(testToDelete);
+      console.log('🗑️ Delete clicked for test:', testId);
+      setActionLoading({ ...actionLoading, [testId]: true });
+      const response = await testAPI.deleteTest(testId);
       console.log('✅ Delete successful, response:', response);
-      toast.success('Test deleted');
-      setShowDeleteConfirm(false);
-      setTestToDelete(null);
-      // Refresh tests list from server
+      toast.success('Test deleted successfully');
       await fetchTests();
     } catch (err) {
       console.error('❌ Failed to delete test:', err);
       const errorMsg = err.response?.data?.error || 'Failed to delete test';
       setError(errorMsg);
       toast.error(errorMsg);
-      setShowDeleteConfirm(false);
-      setTestToDelete(null);
-      // Still refresh to ensure UI is in sync
       await fetchTests();
     } finally {
-      setActionLoading({ ...actionLoading, [testToDelete]: false });
+      setActionLoading({ ...actionLoading, [testId]: false });
     }
   };
 
@@ -129,41 +115,58 @@ export default function TestsTab({ classroom, isTeacher }) {
     window.location.href = `/test/${testId}/preview`;
   };
 
-  const handleTestCreated = (newTest) => {
-    fetchTests();
-  };
+  // Filter logic with search
+  const filteredTests = tests.filter((test) => {
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      const title = (test.title || test.topic || '').toLowerCase();
+      const topic = (test.topic || '').toLowerCase();
+      const code = (test.testCode || '').toLowerCase();
+      if (!title.includes(query) && !topic.includes(query) && !code.includes(query)) {
+        return false;
+      }
+    }
 
-  const filteredTests = filterStatus === 'all' ? tests : tests.filter((test) => test.status === filterStatus);
+    // Status filter
+    if (filterStatus === 'all') return true;
+    return test.status === filterStatus;
+  });
 
   const stats = {
-    total: tests.length,
+    all: tests.length,
     published: tests.filter((t) => t.status === 'published').length,
     draft: tests.filter((t) => t.status === 'draft').length,
   };
 
-  const statusColors = {
-    published: { bg: 'bg-gradient-to-br from-slate-800/60 to-slate-900/40', border: 'border-emerald-500/20', text: 'text-emerald-300', badge: 'bg-gradient-to-r from-emerald-600/30 to-emerald-500/30', borderL: 'border-l-emerald-500', hoverBorder: 'hover:border-emerald-500/40', shadowColor: 'hover:shadow-emerald-500/10' },
-    draft: { bg: 'bg-gradient-to-br from-slate-800/60 to-slate-900/40', border: 'border-yellow-500/20', text: 'text-yellow-300', badge: 'bg-gradient-to-r from-yellow-600/30 to-yellow-500/30', borderL: 'border-l-yellow-500', hoverBorder: 'hover:border-yellow-500/40', shadowColor: 'hover:shadow-yellow-500/10' },
-    archived: { bg: 'bg-gradient-to-br from-slate-800/40 to-slate-900/20', border: 'border-slate-700/30', text: 'text-slate-400', badge: 'bg-slate-700/30', borderL: 'border-l-slate-600', hoverBorder: 'hover:border-slate-700/50', shadowColor: 'hover:shadow-slate-500/10' }
-  };
+  const avgCompletionRate = tests.length > 0
+    ? Math.round(tests.reduce((sum, t) => sum + (t.completionRate || 0), 0) / tests.length)
+    : 0;
+
+  const totalQuestions = tests.reduce((sum, t) => sum + (t.totalQuestions || t.questions?.length || 0), 0);
+
+  // Early returns
+  if (!classroom) {
+    return <LoadingSkeleton type="content" />;
+  }
 
   return (
-    <div className="classroom-tests-wrapper">
-      {/* Header Section */}
-      <div className="classroom-tests-header">
-        <div className="classroom-tests-title-section">
-          <h2 className="classroom-tests-title">📋 Tests</h2>
-          <p className="classroom-tests-subtitle">
-            {isTeacher ? `Create and manage tests for your classroom (${stats.total} total)` : `Take tests assigned by your teacher (${stats.published} available)`}
+    <div className="tests-tab-premium">
+      {/* Header */}
+      <div className="tests-header-premium">
+        <div className="tests-header-left">
+          <h2>Tests</h2>
+          <p>
+            {isTeacher 
+              ? `Create and manage tests for ${classroom.name}` 
+              : `Take tests assigned by your teacher`}
           </p>
         </div>
         
-        {/* Generate Test Button - Only for Teachers */}
         {isTeacher && (
           <button 
+            className="btn-premium btn-primary"
             onClick={() => navigate(`/classrooms/${classroom._id || classroom.id}/generate-test`)}
-            className="btn-generate-test"
-            title="Generate or create a new test"
           >
             <Plus size={18} />
             Create Test
@@ -171,164 +174,256 @@ export default function TestsTab({ classroom, isTeacher }) {
         )}
       </div>
 
-      {/* Filter Tabs */}
-      <div className="tests-filter-tabs">
-        {['all', 'published', 'draft'].map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilterStatus(status)}
-            className={`filter-tab ${filterStatus === status ? 'active' : ''}`}
-          >
-            <span className="filter-label">
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-            </span>
-            <span className="filter-count">{stats[status] || 0}</span>
-          </button>
-        ))}
+      {/* Search and Filter Toolbar */}
+      <div className="tests-toolbar-premium">
+        {/* Search */}
+        <div className="tests-search-wrapper">
+          <Search className="tests-search-icon" size={18} />
+          <input
+            type="text"
+            placeholder="Search tests by title, topic, or code..."
+            className="tests-search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="tests-filter-tabs-premium">
+          {[
+            { value: 'all', label: 'All' },
+            { value: 'published', label: 'Published' },
+            { value: 'draft', label: 'Draft' }
+          ].map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setFilterStatus(tab.value)}
+              className={`tests-filter-tab-premium ${filterStatus === tab.value ? 'active' : ''}`}
+            >
+              {tab.label}
+              <span className="filter-count-badge">{stats[tab.value]}</span>
+            </button>
+          ))}
+        </div>
       </div>
+
+      {/* Stats Bar */}
+      {isTeacher && (
+        <div className="tests-stats-bar-premium">
+          <div className="tests-stat-item-premium">
+            <div className="tests-stat-icon-premium primary">
+              <FileText size={24} color="white" />
+            </div>
+            <div className="tests-stat-content">
+              <span className="tests-stat-label">Total Tests</span>
+              <span className="tests-stat-value">{tests.length}</span>
+            </div>
+          </div>
+
+          <div className="tests-stat-item-premium">
+            <div className="tests-stat-icon-premium success">
+              <CheckCircle size={24} color="white" />
+            </div>
+            <div className="tests-stat-content">
+              <span className="tests-stat-label">Published</span>
+              <span className="tests-stat-value">{stats.published}</span>
+            </div>
+          </div>
+
+          <div className="tests-stat-item-premium">
+            <div className="tests-stat-icon-premium warning">
+              <Clock size={24} color="white" />
+            </div>
+            <div className="tests-stat-content">
+              <span className="tests-stat-label">Total Questions</span>
+              <span className="tests-stat-value">{totalQuestions}</span>
+            </div>
+          </div>
+
+          <div className="tests-stat-item-premium">
+            <div className="tests-stat-icon-premium info">
+              <TrendingUp size={24} color="white" />
+            </div>
+            <div className="tests-stat-content">
+              <span className="tests-stat-label">Avg Completion</span>
+              <span className="tests-stat-value">{avgCompletionRate}%</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (
-        <div className="alert alert-error">
-          <strong>⚠️ Error:</strong> {error}
+        <div className="tests-error-premium">
+          <div className="tests-error-title">⚠️ Error</div>
+          <p className="tests-error-message">{error}</p>
         </div>
       )}
 
       {/* Loading State */}
-      {loading && (
-        <div className="tests-loading">
-          <div className="spinner"></div>
-          <p>Loading tests...</p>
-        </div>
-      )}
+      {loading && <LoadingSkeleton type="grid" count={6} />}
 
       {/* Tests Grid */}
       {!loading && filteredTests.length > 0 && (
-        <div className="tests-grid">
-          {filteredTests.map((test) => {
-            const isLoading = actionLoading[test._id];
-            const isDraft = test.status === 'draft';
-            const isPublished = test.status === 'published';
-
-            return (
-              <div key={test._id} className="test-card">
-                {/* Status Badge */}
-                <div className={`test-status-badge test-status-${test.status}`}>
-                  {isPublished && '✓ Published'}
-                  {isDraft && '✎ Draft'}
-                </div>
-
-                {/* Card Body */}
-                <div className="test-card-body">
-                  <h3 className="test-card-title">{test.title || test.topic || 'Untitled'}</h3>
-                  
-                  {test.topic && test.topic !== (test.title || test.topic) && (
-                    <p className="test-card-topic">{test.topic}</p>
-                  )}
-
-                  {/* Metadata */}
-                  <div className="test-card-meta">
-                    <div className="meta-item">
-                      <span className="meta-label">Difficulty:</span>
-                      <span className={`meta-value difficulty-${test.difficulty || 'medium'}`}>
-                        {test.difficulty ? test.difficulty.charAt(0).toUpperCase() + test.difficulty.slice(1) : 'Medium'}
-                      </span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-label">Questions:</span>
-                      <span className="meta-value">{test.totalQuestions || test.questions?.length || 0}</span>
-                    </div>
-                    <div className="meta-item">
-                      <span className="meta-label">Duration:</span>
-                      <span className="meta-value">{test.duration || 30}m</span>
-                    </div>
-                  </div>
-
-                  {/* Test Code */}
-                  <div className="test-code-section">
-                    <span className="test-code-label">Code:</span>
-                    <code className="test-code-value">{test.testCode || 'N/A'}</code>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="test-card-actions">
-                  {/* Preview Button - Available to both */}
-                  <button 
-                    onClick={() => handlePreview(test._id)}
-                    disabled={isLoading}
-                    className="btn-action btn-action-preview"
-                  >
-                    <Eye size={16} />
-                    Preview
-                  </button>
-
-                  {/* Publish Button - Teachers only, Draft status */}
-                  {isTeacher && isDraft && (
-                    <button 
-                      onClick={() => handlePublish(test._id)}
-                      disabled={isLoading}
-                      className="btn-action btn-action-publish"
-                    >
-                      {isLoading ? '⏳' : '🎉'} Publish
-                    </button>
-                  )}
-
-                  {/* Delete Button - Teachers only */}
-                  {isTeacher && (
-                    <button 
-                      onClick={() => handleDelete(test._id)}
-                      disabled={isLoading}
-                      className="btn-action btn-action-delete"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+        <div className="tests-grid-premium">
+          {filteredTests.map((test) => (
+            <TestCardPremium
+              key={test._id}
+              test={test}
+              isTeacher={isTeacher}
+              isLoading={actionLoading[test._id]}
+              onPreview={handlePreview}
+              onPublish={handlePublish}
+              onDelete={handleDelete}
+            />
+          ))}
         </div>
       )}
 
       {/* Empty State */}
       {!loading && filteredTests.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-icon">📚</div>
-          <h3 className="empty-title">
-            {tests.length === 0 ? 'No Tests Yet' : `No ${filterStatus} Tests`}
+        <EmptyState
+          icon={FileText}
+          title={tests.length === 0 ? 'No Tests Yet' : 'No Tests Found'}
+          description={
+            tests.length === 0
+              ? isTeacher
+                ? 'Create your first test to get started with your classroom.'
+                : 'No tests are available yet. Check back later!'
+              : searchQuery.trim()
+              ? `No tests match "${searchQuery}"`
+              : `No ${filterStatus} tests found. Try a different filter.`
+          }
+          action={
+            tests.length === 0 && isTeacher
+              ? {
+                  label: 'Create First Test',
+                  icon: Plus,
+                  onClick: () => navigate(`/classrooms/${classroom._id || classroom.id}/generate-test`)
+                }
+              : undefined
+          }
+        />
+      )}
+    </div>
+  );
+}
+
+// Premium Test Card Component
+function TestCardPremium({ test, isTeacher, isLoading, onPreview, onPublish, onDelete }) {
+  const isDraft = test.status === 'draft';
+  const isPublished = test.status === 'published';
+
+  const difficulty = test.difficulty || 'medium';
+  const totalQuestions = test.totalQuestions || test.questions?.length || 0;
+  const duration = test.duration || 30;
+  const avgScore = test.avgScore || 0;
+  const completionRate = test.completionRate || 0;
+  const attemptCount = test.attemptCount || 0;
+
+  return (
+    <div className={`test-card-premium ${test.status}`}>
+      {/* Header */}
+      <div className="test-card-header-premium">
+        <div className="test-card-title-section">
+          <h3 className="test-card-title-premium">
+            {test.title || test.topic || 'Untitled Test'}
           </h3>
-          <p className="empty-description">
-            {isTeacher 
-              ? 'Create your first test to get started with your classroom.' 
-              : 'No tests are available yet. Check back later!'}
-          </p>
-          {isTeacher && tests.length === 0 && (
-            <button 
-              onClick={() => navigate(`/classrooms/${classroom._id || classroom.id}/generate-test`)}
-              className="btn-generate-test"
-            >
-              <Plus size={18} />
-              Create First Test
-            </button>
+          {test.topic && test.topic !== (test.title || test.topic) && (
+            <p className="test-card-topic-premium">{test.topic}</p>
           )}
+        </div>
+        
+        <div className={`test-status-badge-premium ${test.status}`}>
+          {isPublished && (
+            <>
+              <CheckCircle size={12} />
+              Published
+            </>
+          )}
+          {isDraft && (
+            <>
+              <Clock size={12} />
+              Draft
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Metadata Grid */}
+      <div className="test-metadata-grid-premium">
+        <div className="test-metadata-item-premium">
+          <span className="test-metadata-label-premium">Difficulty</span>
+          <span className={`test-metadata-value-premium ${difficulty}`}>
+            {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+          </span>
+        </div>
+        <div className="test-metadata-item-premium">
+          <span className="test-metadata-label-premium">Questions</span>
+          <span className="test-metadata-value-premium">{totalQuestions}</span>
+        </div>
+        <div className="test-metadata-item-premium">
+          <span className="test-metadata-label-premium">Duration</span>
+          <span className="test-metadata-value-premium">{duration}m</span>
+        </div>
+      </div>
+
+      {/* Test Code */}
+      <div className="test-code-section-premium">
+        <span className="test-code-label-premium">Test Code</span>
+        <code className="test-code-value-premium">{test.testCode || 'N/A'}</code>
+      </div>
+
+      {/* Analytics Preview - Only for published tests */}
+      {isTeacher && isPublished && (
+        <div className="test-analytics-preview-premium">
+          <div className="test-analytics-row">
+            <span className="test-analytics-label">Attempts</span>
+            <span className="test-analytics-value">{attemptCount}</span>
+          </div>
+          <div className="test-analytics-row">
+            <span className="test-analytics-label">Avg Score</span>
+            <span className="test-analytics-value">{avgScore}%</span>
+          </div>
+          <div className="test-analytics-row">
+            <span className="test-analytics-label">Completion Rate</span>
+            <span className="test-analytics-value">{completionRate}%</span>
+          </div>
         </div>
       )}
 
-      <ConfirmationModal
-        isOpen={showDeleteConfirm}
-        title="Delete Test?"
-        message="This action cannot be undone. All test data and responses will be permanently deleted."
-        confirmText="Delete"
-        cancelText="Cancel"
-        isDangerous={true}
-        isLoading={actionLoading[testToDelete]}
-        onConfirm={confirmDelete}
-        onCancel={() => {
-          setShowDeleteConfirm(false);
-          setTestToDelete(null);
-        }}
-      />
+      {/* Actions */}
+      <div className="test-actions-premium">
+        <button 
+          onClick={() => onPreview(test._id)}
+          disabled={isLoading}
+          className="test-action-btn-premium primary"
+        >
+          <Eye size={16} />
+          Preview
+        </button>
+
+        {isTeacher && isDraft && (
+          <button 
+            onClick={() => onPublish(test._id)}
+            disabled={isLoading}
+            className="test-action-btn-premium success"
+          >
+            <CheckCircle size={16} />
+            Publish
+          </button>
+        )}
+
+        {isTeacher && (
+          <button 
+            onClick={() => onDelete(test._id)}
+            disabled={isLoading}
+            className="test-action-btn-premium danger"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
+      </div>
     </div>
   );
 }

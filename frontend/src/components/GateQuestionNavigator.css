@@ -1,0 +1,141 @@
+/**
+ * GateQuestionNavigator Styles
+ * 
+ * Grid of question numbers with status indicators
+ * Users can click to jump to any question
+ */
+
+.question-navigator {
+  display: flex;
+  flex-direction: column;
+}
+
+.question-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+/* ========== QUESTION BUTTON ========== */
+
+.question-btn {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #bdc3c7;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+}
+
+.question-btn .btn-number {
+  z-index: 1;
+}
+
+.question-btn .status-indicator {
+  position: absolute;
+  font-size: 16px;
+  color: white;
+}
+
+/* ========== UNANSWERED STATE ========== */
+
+.question-btn.unanswered {
+  background: white;
+  border-color: #bdc3c7;
+  color: #999;
+}
+
+.question-btn.unanswered:hover {
+  border-color: #95a5a6;
+  background: #f8f9fa;
+}
+
+/* ========== ANSWERED STATE ========== */
+
+.question-btn.answered {
+  background: #3498db;
+  border-color: #2980b9;
+  color: white;
+}
+
+.question-btn.answered .btn-number {
+  color: white;
+}
+
+.question-btn.answered:hover {
+  background: #2980b9;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+/* ========== CURRENT STATE ========== */
+
+.question-btn.current {
+  background: #f1c40f;
+  border-color: #f39c12;
+  color: white;
+  box-shadow: 0 0 10px rgba(241, 196, 15, 0.4);
+}
+
+.question-btn.current .btn-number {
+  color: white;
+  font-weight: 700;
+}
+
+.question-btn.current.active {
+  animation: highlight 0.3s ease;
+}
+
+@keyframes highlight {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* ========== RESPONSIVE ========== */
+
+@media (max-width: 1024px) {
+  .question-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .question-navigator {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 5px 0;
+  }
+
+  .question-grid {
+    display: flex;
+    gap: 6px;
+    min-width: max-content;
+  }
+
+  .question-btn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .question-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    font-size: 10px;
+  }
+}

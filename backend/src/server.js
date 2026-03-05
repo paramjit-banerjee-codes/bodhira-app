@@ -23,6 +23,8 @@ import profileRoutes from './routes/profileRoutes.js';
 import classroomRoutes from './routes/classroomRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import gateMockTestRoutes from './routes/gateMockTest.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
 
 // Initialize Express app
 const app = express();
@@ -82,10 +84,12 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tests', testRoutes);
+app.use('/api/tests', gateMockTestRoutes);  // GATE Mock Test routes
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/classrooms', classroomRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 // Mount analytics routes under classrooms with the classroom id in the path
 app.use('/api/classrooms/:id/analytics', analyticsRoutes);
 

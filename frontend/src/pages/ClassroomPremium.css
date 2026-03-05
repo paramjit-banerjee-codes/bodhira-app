@@ -1,5 +1,46 @@
+/**
+ * ═══════════════════════════════════════════════════════
+ * PREMIUM CLASSROOM PAGE 2025
+ * ═══════════════════════════════════════════════════════
+ */
+
+.classroom-page-premium {
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.classroom-header-premium {
+  background: var(--gradient-surface);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--bg-border);
+  padding: var(--spacing-2xl) 0;
+}
+
+.header-content-flex {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.classroom-content-premium {
+  position: relative;
+  z-index: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .classroom-header-premium {
+    padding: var(--spacing-xl) 0;
+  }
+  
+  .header-content-flex {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 /* ====================================
-   CLASSROOM PREMIUM DESIGN SYSTEM
+   LEGACY CLASSROOM DESIGN (Keeping for backwards compatibility)
    ==================================== */
 
 /* Root Color Variables */

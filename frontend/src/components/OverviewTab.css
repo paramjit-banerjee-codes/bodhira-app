@@ -1,0 +1,107 @@
+/**
+ * ═══════════════════════════════════════════════════════
+ * PREMIUM OVERVIEW TAB STYLES 2025
+ * ═══════════════════════════════════════════════════════
+ */
+
+.overview-tab-premium {
+  padding: var(--spacing-2xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
+.overview-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+/* Stats Grid */
+.stats-grid-premium {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-xl);
+}
+
+/* About Section */
+.about-section-premium {
+  background: var(--gradient-surface);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--bg-border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-2xl);
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.about-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  background: rgba(26, 31, 53, 0.4);
+  border: 1px solid rgba(42, 49, 68, 0.6);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+}
+
+.about-item:hover {
+  background: rgba(26, 31, 53, 0.6);
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-2px);
+}
+
+.about-icon-container {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.description-card {
+  padding: var(--spacing-xl);
+  background: rgba(26, 31, 53, 0.4);
+  border: 1px solid rgba(42, 49, 68, 0.6);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-xl);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .overview-tab-premium {
+    padding: var(--spacing-xl);
+  }
+  
+  .stats-grid-premium {
+    grid-template-columns: 1fr;
+  }
+  
+  .about-section-premium {
+    padding: var(--spacing-xl);
+  }
+  
+  .about-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .overview-tab-premium {
+    padding: var(--spacing-lg);
+  }
+  
+  .about-item {
+    flex-direction: column;
+    text-align: center;
+  }
+}

@@ -11,11 +11,11 @@ export const getUserProfile = async (req, res) => {
     const user = await User.findById(req.userId)
       .populate({
         path: 'createdTests',
-        select: 'title topic difficulty testCode createdAt totalQuestions',
+        select: '_id title topic difficulty testCode createdAt totalQuestions',
       })
       .populate({
         path: 'attemptedTests',
-        select: 'testCode topic score totalQuestions percentage createdAt',
+        select: '_id testCode topic score totalQuestions percentage createdAt',
         populate: { path: 'userId', select: 'name' },
       });
 
@@ -121,6 +121,12 @@ async function getTeacherStats(userId) {
       averageClassSize,
       totalAttempts,
       averageStudentScore: avgScore,
+      avgScore, // Alias for frontend compatibility
+      avgStudentScore: avgScore, // Alias for frontend Profile page
+      streak: 0, // Teachers don't have streaks, but frontend expects this property
+      totalClassrooms: classroomsCreated, // Alias for frontend
+      avgClassSize: averageClassSize, // Alias for frontend
+      activeStudents: totalStudents, // Alias for frontend
     };
   } catch (error) {
     console.error('Error calculating teacher stats:', error);
@@ -132,6 +138,11 @@ async function getTeacherStats(userId) {
       averageClassSize: 0,
       totalAttempts: 0,
       averageStudentScore: 0,
+      avgScore: 0,
+      streak: 0,
+      totalClassrooms: 0,
+      avgClassSize: 0,
+      activeStudents: 0,
     };
   }
 }
@@ -243,11 +254,14 @@ async function getStudentStats(userId) {
       testsAttempted,
       testsPassed,
       averageScore,
+      avgScore: averageScore, // Alias for frontend compatibility
       strongestTopics,
       weakestTopics,
       streak,
       improvement,
       recentTests,
+      testsCreated: testsAttempted, // Alias for frontend
+      totalStudents: 0, // Students don't manage students
       topicCount: topicStats.length,
     };
   } catch (error) {
@@ -256,12 +270,15 @@ async function getStudentStats(userId) {
       testsAttempted: 0,
       testsPassed: 0,
       averageScore: 0,
+      avgScore: 0,
       strongestTopics: [],
       weakestTopics: [],
       streak: 0,
       improvement: 0,
       recentTests: [],
       topicCount: 0,
+      testsCreated: 0,
+      totalStudents: 0,
     };
   }
 }

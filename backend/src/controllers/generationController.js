@@ -9,6 +9,10 @@ import {
   createTestObject,
 } from '../utils/testGenerationHelpers.js';
 
+// 🔧 DEVELOPMENT MODE: Set to true to disable all premium limits for testing
+// ⚠️  IMPORTANT: Set to false before production deployment
+const DEV_MODE_UNLIMITED = true;
+
 // Constants for test generation limits
 const TEST_GENERATION_LIMITS = {
   FREE_TEACHER: 5,        // Unpaid teachers can generate max 5 tests
@@ -24,6 +28,17 @@ const TEST_GENERATION_LIMITS = {
  */
 async function checkTestGenerationLimit(userId) {
   try {
+    // 🔧 DEV MODE: Skip all checks and return unlimited
+    if (DEV_MODE_UNLIMITED) {
+      console.log('🔧 [DEV MODE] Premium checks disabled - unlimited generation enabled');
+      return {
+        canGenerate: true,
+        remaining: Infinity,
+        limit: Infinity,
+        isPaid: true,
+        message: 'Development Mode: Unlimited test generation'
+      };
+    }
     // Check if user has active subscription
     const activeSubscription = await Subscription.findOne({
       userId,

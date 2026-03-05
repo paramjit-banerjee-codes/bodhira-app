@@ -1,0 +1,100 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables (NEVER COMMIT THESE!)
+.env
+.env.local
+.env.production
+.env.development
+backend/.env
+frontend/.env
+**/.env
+
+# Build outputs
+dist/
+build/
+*.log
+server-out.log
+server-err.log
+frontend.log
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation files (exclude all except main README.md)
+00_START_HERE.md
+ACTION_CHECKLIST.md
+AI_ML_IMPLEMENTATION_SUMMARY.md
+AI_ML_PERFORMANCE_ANALYSIS_USP.md
+AI_ML_QUICK_REFERENCE.md
+ARCHITECTURE.md
+AUDIT_AND_FIXES_COMPLETE.md
+BUILD_COMPLETE.md
+CHANGED_FILES.md
+CHANGELOG*.md
+CLASSROOM*.md
+CODE_IMPLEMENTATION_SUMMARY.md
+COMPLETION_REPORT.md
+DASHBOARD*.md
+DEPLOYMENT_STATUS.md
+DOCUMENTATION_INDEX.md
+EMAIL_SETUP_GUIDE.md
+FINAL_*.md
+FIXES_*.md
+FORM_RESET_IMPLEMENTATION.md
+GATE_*.md
+GENERATE_TEST_PREMIUM_REDESIGN_COMPLETE.md
+HARDCODED_DARK_COLORS_ANALYSIS.md
+HISTORY_*.md
+IMPLEMENTATION_*.md
+INDEX.md
+MOCK_TEST_SYSTEM_DOCS.md
+MODAL_FIX_COMPLETE.md
+OPENAI_MIGRATION.md
+PATCH_DETAILS.md
+PAYMENT_*.md
+PREMIUM_*.md
+PROFILE_*.md
+PROGRESS_*.md
+QUICK_*.md
+QUOTA_*.md
+RAZORPAY_*.md
+README_DEPLOYMENT.md
+README_DOCUMENTATION.md
+README_GATE_*.md
+README_UI_REDESIGN.md
+START_HERE_*.md
+STUDENT_PROFILE_FEATURE.md
+TESTING_GUIDE.md
+TEST_COUNTER_*.md
+UI_*.md
+VALIDATION_HOWTO.md
+VERIFICATION_*.md
+VISUAL_SUMMARY.md
+
+# Backend specific
+backend/server-out.log
+backend/server-err.log
+backend/migrate-handles.js
+backend/test-*.js
+
+# Test files
+tests/
+*.test.js
+*.spec.js
+
+# Misc
+*.bak
+*.tmp
+.cache/
+.temp/

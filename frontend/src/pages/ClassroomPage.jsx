@@ -1,17 +1,20 @@
 import { useState, useContext, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Trash2, MoreVertical } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
-import './ClassroomPremium.css';
+import TabNavigation from '../components/TabNavigation';
 import OverviewTab from '../components/OverviewTab';
+import AnnouncementsTab from '../components/AnnouncementsTab';
+import MaterialsTab from '../components/MaterialsTab';
+import AssignmentsTab from '../components/AssignmentsTab';
 import StudentsTab from '../components/StudentsTab';
 import TestsTab from '../components/TestsTab';
 import AnalyticsTab from '../components/AnalyticsTab';
-import OverviewTabPremium from '../components/OverviewTabPremium';
-import StudentsTabPremium from '../components/StudentsTabPremium';
-import TestsTabPremium from '../components/TestsTabPremium';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { classroomAPI } from '../services/api';
 import toast from '../utils/toast';
+import '../styles/DesignSystem.css';
+import './ClassroomPremium.css';
 
 export default function ClassroomPage() {
   const { id } = useParams();
@@ -132,180 +135,134 @@ export default function ClassroomPage() {
   }
   console.log('==========================================\n');
 
-  const tabs = [
-    { id: 'overview', label: '📊 Overview' },
-    ...(isTeacher ? [{ id: 'students', label: '👥 Students' }] : []),
-    { id: 'tests', label: '📝 Tests' },
-    ...(isTeacher ? [{ id: 'analytics', label: '📈 Analytics' }] : [])
-  ];
-
   const renderContent = () => {
-    try {
-      console.log('🎨 Rendering content for tab:', activeTab);
-      switch (activeTab) {
-        case 'overview':
-          return <OverviewTabPremium classroom={classroom} isTeacher={isTeacher} />;
-        case 'students':
-          return <StudentsTabPremium classroom={classroom} isTeacher={isTeacher} onStudentAdded={handleStudentAdded} onStudentRemoved={handleStudentRemoved} />;
-        case 'tests':
-          return <TestsTabPremium classroom={classroom} isTeacher={isTeacher} />;
-        case 'analytics':
-          return <AnalyticsTab classroom={classroom} isTeacher={isTeacher} />;
-        default:
-          return <OverviewTabPremium classroom={classroom} isTeacher={isTeacher} />;
-      }
-    } catch (err) {
-      console.error('❌ renderContent error for tab', activeTab, ':', err);
-      return (
-        <div className="classroom-error">
-          <p>Error rendering {activeTab} tab: {err.message}</p>
-        </div>
-      );
+    switch (activeTab) {
+      case 'overview':
+        return <OverviewTab classroom={classroom} isTeacher={isTeacher} />;
+      case 'announcements':
+        return <AnnouncementsTab classroom={classroom} isTeacher={isTeacher} />;
+      case 'materials':
+        return <MaterialsTab classroom={classroom} isTeacher={isTeacher} />;
+      case 'assignments':
+        return <AssignmentsTab classroom={classroom} isTeacher={isTeacher} />;
+      case 'tests':
+        return <TestsTab classroom={classroom} isTeacher={isTeacher} />;
+      case 'students':
+        return <StudentsTab classroom={classroom} isTeacher={isTeacher} onStudentAdded={handleStudentAdded} onStudentRemoved={handleStudentRemoved} />;
+      case 'analytics':
+        return <AnalyticsTab classroom={classroom} isTeacher={isTeacher} />;
+      default:
+        return <OverviewTab classroom={classroom} isTeacher={isTeacher} />;
     }
   };
 
+  // Loading State
+  if (loading) {
+    return (
+      <div className="classroom-page-premium">
+        <div className="container-premium section-premium">
+          <div className="flex-center" style={{ minHeight: '60vh' }}>
+            <div className="spinner-premium spinner-premium-lg"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error State
+  if (error || !classroom) {
+    return (
+      <div className="classroom-page-premium">
+        <div className="container-premium section-premium">
+          <div className="card-premium" style={{ textAlign: 'center', padding: 'var(--spacing-4xl)' }}>
+            <h2 className="heading-2" style={{ color: 'var(--accent-danger)', marginBottom: 'var(--spacing-lg)' }}>
+              {error || 'Classroom not found'}
+            </h2>
+            <button 
+              className="btn-premium btn-premium-primary"
+              onClick={() => navigate('/classrooms')}
+            >
+              <ArrowLeft size={18} />
+              Back to Classrooms
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="classroom-container">
-      <div className="classroom-bg-glow"></div>
-      
-      {/* Loading State */}
-      {loading && (
-        <div className="classroom-main">
-          <div className="classroom-loading">
-            <div className="skeleton-loader skeleton-header"></div>
-            <div className="skeleton-loader skeleton-card"></div>
-            <div className="skeleton-loader skeleton-card"></div>
-            <div className="skeleton-loader skeleton-line" style={{ width: '80%' }}></div>
-            <div className="skeleton-loader skeleton-line" style={{ width: '60%' }}></div>
-          </div>
-        </div>
-      )}
-
-      {/* Error State */}
-      {error && !loading && (
-        <div className="classroom-main">
-          <div className="classroom-error">
-            <p>{error}</p>
-            <button
+    <div className="classroom-page-premium">
+      {/* Header */}
+      <div className="classroom-header-premium">
+        <div className="container-premium">
+          <div className="header-content-flex">
+            <button 
+              className="btn-premium btn-premium-ghost"
               onClick={() => navigate('/classrooms')}
-              className="btn-premium btn-premium-primary"
-              style={{ marginTop: '16px' }}
+              style={{ marginRight: 'var(--spacing-lg)' }}
             >
-              ← Back to Classrooms
+              <ArrowLeft size={18} />
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {!loading && !error && !classroom && (
-        <div className="classroom-main">
-          <div className="classroom-empty-state">
-            <div className="classroom-empty-icon">📁</div>
-            <h3 className="classroom-empty-title">Classroom not found</h3>
-            <p className="classroom-empty-desc">This classroom may have been deleted or you don't have access to it.</p>
-            <button
-              onClick={() => navigate('/classrooms')}
-              className="btn-premium btn-premium-primary"
-            >
-              ← Back to Classrooms
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Content */}
-      {!loading && !error && classroom && (
-        <div className="classroom-main">
-          {/* Header */}
-          <div className="classroom-header">
-            <div className="classroom-header-top">
-              <button
-                onClick={() => navigate('/classrooms')}
-                className="classroom-back-btn"
-                title="Back to Classrooms"
-              >
-                ←
-              </button>
-              <div className="classroom-header-content">
-                <h1 className="classroom-title">{classroom.name}</h1>
-                <p className="classroom-subtitle">
-                  <span>📚 Subject: {classroom.subject || 'Not specified'}</span>
-                  <span className="classroom-badge">@{classroom.handle}</span>
-                  {isTeacher && <span className="classroom-badge" style={{ background: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.3)', color: '#6ee7b7' }}>🔑 Teacher</span>}
-                </p>
+            
+            <div style={{ flex: 1 }}>
+              <h1 className="heading-1" style={{ marginBottom: 'var(--spacing-xs)' }}>
+                {classroom.name}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)', flexWrap: 'wrap' }}>
+                <span className="badge-premium badge-info">
+                  {classroom.subject || 'General'}
+                </span>
+                <span className="body-small" style={{ color: 'var(--text-tertiary)' }}>
+                  @{classroom.handle}
+                </span>
+                {isTeacher && (
+                  <span className="badge-premium badge-success">
+                    Teacher
+                  </span>
+                )}
               </div>
             </div>
+
             {isTeacher && (
-              <div className="classroom-header-actions">
-                <button 
-                  className="btn-delete-classroom"
-                  onClick={handleDeleteClassroom}
-                  disabled={deleteLoading}
-                >
-                  {deleteLoading ? '⏳ Deleting...' : '🗑️ Delete'}
-                </button>
-              </div>
+              <button 
+                className="btn-premium btn-premium-danger"
+                onClick={handleDeleteClassroom}
+                disabled={deleteLoading}
+              >
+                <Trash2 size={18} />
+                {deleteLoading ? 'Deleting...' : 'Delete'}
+              </button>
             )}
           </div>
-
-          {/* Tab Navigation */}
-          <div className="classroom-tabs-container">
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                className={`classroom-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Summary Card - Top */}
-          <div className="classroom-sidebar classroom-sidebar-top">
-            <div className="classroom-summary-card">
-              <h3 className="classroom-summary-title">📊 Summary</h3>
-              <div className="classroom-stat-item">
-                <span className="classroom-stat-label">Total Students</span>
-                <span className="classroom-stat-value">{classroom.totalStudents || 0}</span>
-              </div>
-              <div className="classroom-stat-item">
-                <span className="classroom-stat-label">Total Tests</span>
-                <span className="classroom-stat-value">{classroom.totalTests || 0}</span>
-              </div>
-              <div className="classroom-stat-item">
-                <span className="classroom-stat-label">Class Avg Score</span>
-                <span className="classroom-stat-value">{classroom.avgScore || 0}%</span>
-              </div>
-              <div className="classroom-stat-item">
-                <span className="classroom-stat-label">Handle</span>
-                <span className="classroom-stat-value" style={{ fontSize: '14px' }}>@{classroom.handle}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Content Grid */}
-          <div className="classroom-content">
-            <div className="classroom-main-content">
-              {renderContent()}
-            </div>
-          </div>
         </div>
-      )}
+      </div>
 
-      {/* Delete Classroom Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={showDeleteConfirm}
-        title="Delete Classroom?"
-        message="This will permanently delete this classroom and all associated data. This action cannot be undone."
-        confirmText="Delete Classroom"
-        cancelText="Cancel"
-        onConfirm={confirmDelete}
-        onCancel={() => setShowDeleteConfirm(false)}
-        isLoading={deleteLoading}
-        isDangerous={true}
+      {/* Tab Navigation */}
+      <TabNavigation 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
       />
+
+      {/* Content */}
+      <div className="classroom-content-premium">
+        {renderContent()}
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <ConfirmationModal
+          isOpen={showDeleteConfirm}
+          title="Delete Classroom?"
+          message="This will permanently delete this classroom and all associated data. This action cannot be undone."
+          confirmText="Delete Classroom"
+          cancelText="Cancel"
+          onConfirm={confirmDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+          isLoading={deleteLoading}
+          isDangerous={true}
+        />
+      )}
     </div>
   );
 }

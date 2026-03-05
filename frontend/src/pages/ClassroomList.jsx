@@ -1,21 +1,40 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { Plus, School, Search, Filter, Sparkles } from 'lucide-react';
 import ClassroomCard from '../components/ClassroomCard';
 import CreateClassroomModal from '../components/CreateClassroomModal';
+import EmptyState from '../components/EmptyState';
+import LoadingSkeleton from '../components/LoadingSkeleton';
 import { classroomAPI } from '../services/api';
+import '../styles/DesignSystem.css';
 import './ClassroomList.css';
 
 export default function ClassroomList() {
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [classrooms, setClassrooms] = useState([]);
+  const [filteredClassrooms, setFilteredClassrooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
 
-  // Fetch classrooms on component mount
+  // Check authentication
   useEffect(() => {
-    fetchClassrooms();
-  }, []);
+    if (!authLoading && !user) {
+      navigate('/login', { replace: true });
+    }
+  }, [user, authLoading, navigate]);
+
+  // Fetch classrooms on component mount (only if authenticated)
+  useEffect(() => {
+    if (user && !authLoading) {
+      fetchClassrooms();
+    }
+  }, [user, authLoading]);
 
   // Handle parallax mouse movement
   useEffect(() => {
@@ -27,12 +46,28 @@ export default function ClassroomList() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
+  // Filter classrooms based on search
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredClassrooms(classrooms);
+    } else {
+      const query = searchQuery.toLowerCase();
+      setFilteredClassrooms(
+        classrooms.filter(classroom =>
+          classroom.name.toLowerCase().includes(query) ||
+          classroom.subject?.toLowerCase().includes(query) ||
+          classroom.handle?.toLowerCase().includes(query) ||
+          classroom.description?.toLowerCase().includes(query)
+        )
+      );
+    }
+  }, [searchQuery, classrooms]);
+
   const fetchClassrooms = async () => {
     try {
       setLoading(true);
       const response = await classroomAPI.getClassrooms();
       const data = response?.data?.data || [];
-      // Use backend data (empty array allowed)
       setClassrooms(data);
       setError(null);
     } catch (err) {
@@ -54,119 +89,166 @@ export default function ClassroomList() {
     }
   };
 
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="container-premium section-premium">
+        <div className="flex-center" style={{ minHeight: '400px' }}>
+          <div className="spinner-premium spinner-premium-lg"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
+
   return (
-    <div className="container classroom-container" ref={containerRef}>
-      {/* Premium Background with Parallax */}
-      <div className="classroom-bg-premium">
-        <div className="classroom-bg-glow" style={{
-          transform: `translate(${mousePosition.x * 0.05}px, ${mousePosition.y * 0.05}px)`
-        }}></div>
-        <div className="classroom-bg-glow-secondary" style={{
-          transform: `translate(${mousePosition.x * -0.03}px, ${mousePosition.y * -0.03}px)`
-        }}></div>
+    <div className="classroom-list-premium-2025" ref={containerRef}>
+      {/* Animated Background */}
+      <div className="classroom-bg-animated">
+        <div 
+          className="bg-orb bg-orb-primary" 
+          style={{
+            transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`
+          }}
+        />
+        <div 
+          className="bg-orb bg-orb-secondary" 
+          style={{
+            transform: `translate(${mousePosition.x * -0.015}px, ${mousePosition.y * -0.015}px)`
+          }}
+        />
       </div>
 
-      {/* Hero Section with Glow */}
-      <div className="classroom-hero">
-        <div className="hero-icon-wrapper">
-          <div className="hero-icon-glow"></div>
-          <div className="hero-icon">✨</div>
-        </div>
-        <div className="hero-content">
-          <h1 className="hero-title">My Classrooms</h1>
-          <p className="hero-subtitle">Create, manage, and scale your teaching experience</p>
-        </div>
-      </div>
-
-      <div className="classroom-content">
-        {/* Classrooms Grid */}
-        {!loading && classrooms.length > 0 && (
-          <div className="classrooms-grid">
-            {classrooms.map((classroom, idx) => (
-              <div key={classroom._id || classroom.id} className="classroom-card-wrapper" style={{
-                animationDelay: `${idx * 50}ms`
-              }}>
-                <ClassroomCard 
-                  classroom={classroom}
-                  index={idx}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Loading State - Premium Skeleton */}
-        {loading && (
-          <div className="skeleton-classrooms-grid">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="skeleton-card" style={{
-                animationDelay: `${i * 50}ms`
-              }}>
-                <div className="skeleton-card-header">
-                  <div className="skeleton-title"></div>
-                  <div className="skeleton-badge"></div>
-                </div>
-                <div className="skeleton-description"></div>
-                <div className="skeleton-stats">
-                  <div className="skeleton-stat"></div>
-                  <div className="skeleton-stat"></div>
-                </div>
-                <div className="skeleton-button"></div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Error State */}
-        {error && !loading && (
-          <div className="error-state-premium">
-            <div className="error-icon">⚠️</div>
-            <h3 className="error-title">Oops! Something went wrong</h3>
-            <p className="error-description">{error}</p>
-            <button
-              onClick={fetchClassrooms}
-              className="btn-error-retry"
-            >
-              <span>🔄 Try Again</span>
-            </button>
-          </div>
-        )}
-
-        {/* Empty State - Futuristic */}
-        {!loading && classrooms.length === 0 && (
-          <div className="empty-state-premium">
-            <div className="empty-hologram-container">
-              <div className="empty-hologram-icon">🏫</div>
-              <div className="empty-hologram-glow"></div>
+      {/* Hero Section */}
+      <div className="classroom-hero-premium">
+        <div className="container-premium">
+          <div className="hero-content">
+            <div className="hero-icon-badge">
+              <School size={20} strokeWidth={2.5} />
             </div>
-            <h2 className="empty-title">No Classrooms Yet</h2>
-            <p className="empty-description">Your teaching journey starts here. Create your first classroom to engage with students and manage assessments.</p>
-            <button
-              onClick={() => setShowModal(true)}
-              className="btn-create-first"
-            >
-              <span className="btn-content">🚀 Create First Classroom</span>
-              <span className="btn-ripple"></span>
-            </button>
+            
+            <h1 className="heading-1" style={{ 
+              marginBottom: 'var(--spacing-sm)',
+              fontSize: '32px',
+              fontWeight: 700,
+              letterSpacing: '-0.5px'
+            }}>
+              My Classrooms
+            </h1>
+            
+            <p className="body-small" style={{ 
+              color: 'var(--text-secondary)', 
+              maxWidth: '500px',
+              margin: '0 auto var(--spacing-lg)',
+              fontSize: '14px'
+            }}>
+              Create, manage, and scale your teaching experience
+            </p>
+
+            <div className="hero-actions">
+              <button 
+                className="btn-premium btn-premium-primary"
+                onClick={() => setShowModal(true)}
+                style={{
+                  padding: '10px 20px',
+                  fontSize: '14px',
+                  fontWeight: 600
+                }}
+              >
+                <Plus size={18} strokeWidth={2.5} />
+                <span>New Classroom</span>
+              </button>
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Create Button - Floating FAB with Neon Glow */}
-      <div className="create-fab-container">
-        <button
-          onClick={() => setShowModal(true)}
-          className="btn-fab-neon"
-          title="Create new classroom"
-        >
-          <span className="fab-icon">+</span>
-          <span className="fab-glow"></span>
-          <span className="fab-particles">
-            {[...Array(4)].map((_, i) => (
-              <span key={i} className="particle"></span>
+      {/* Main Content */}
+      <div className="container-premium" style={{ paddingTop: 0 }}>
+        {/* Search Bar - Premium Design */}
+        {classrooms.length > 0 && (
+          <div className="classroom-toolbar">
+            <div className="search-container-premium">
+              <Search size={16} className="search-icon" />
+              <input
+                type="text"
+                className="search-input-premium"
+                placeholder="Search classrooms..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
+            <div className="toolbar-stats">
+              <span className="body-small" style={{ 
+                color: 'var(--text-tertiary)',
+                fontSize: '13px'
+              }}>
+                {filteredClassrooms.length} {filteredClassrooms.length === 1 ? 'classroom' : 'classrooms'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Content */}
+        {loading ? (
+          <div className="classroom-grid-premium">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="card-premium" style={{ 
+                height: '340px',
+                background: 'var(--surface-elevated)',
+                animation: 'pulse 2s ease-in-out infinite',
+                animationDelay: `${i * 0.1}s`
+              }}>
+                <div className="spinner-premium"></div>
+              </div>
             ))}
-          </span>
-        </button>
+          </div>
+        ) : error ? (
+          <div className="card-premium" style={{ textAlign: 'center', padding: 'var(--spacing-3xl)' }}>
+            <p className="body-large" style={{ color: 'var(--accent-danger)', marginBottom: 'var(--spacing-lg)' }}>
+              {error}
+            </p>
+            <button 
+              className="btn-premium btn-premium-secondary"
+              onClick={fetchClassrooms}
+            >
+              Try Again
+            </button>
+          </div>
+        ) : filteredClassrooms.length === 0 ? (
+          searchQuery ? (
+            <EmptyState
+              icon={Search}
+              title="No classrooms found"
+              description={`No classrooms match "${searchQuery}". Try a different search term.`}
+              iconColor="var(--accent-warning)"
+            />
+          ) : (
+            <EmptyState
+              icon={Sparkles}
+              title="Create your first classroom"
+              description="Start building your teaching community by creating your first classroom. Add students, share materials, and track progress."
+              actionLabel="Create Classroom"
+              onAction={() => setShowModal(true)}
+              iconColor="var(--accent-primary)"
+            />
+          )
+        ) : (
+          <div className="classroom-grid-premium">
+            {filteredClassrooms.map((classroom, index) => (
+              <ClassroomCard 
+                key={classroom._id || classroom.id} 
+                classroom={classroom}
+                index={index}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Create Classroom Modal */}

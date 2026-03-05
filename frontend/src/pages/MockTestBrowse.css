@@ -1,0 +1,364 @@
+/* Mock Test Browse Page Styles */
+
+.mock-test-browse {
+  background: #0A0A0B;
+  min-height: 100vh;
+}
+
+/* Hero Section */
+.hero-section {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  padding: 80px 48px;
+  background: radial-gradient(circle at center, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+}
+
+.hero-background-effects {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.grid-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
+  background-size: 50px 50px;
+  opacity: 0.3;
+}
+
+.floating-shape {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15), transparent);
+  animation: float-shape 8s ease-in-out infinite;
+}
+
+.shape-1 {
+  width: 300px;
+  height: 300px;
+  top: 10%;
+  left: 10%;
+  animation-delay: 0s;
+}
+
+.shape-2 {
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  right: 15%;
+  animation-delay: 2s;
+}
+
+.shape-3 {
+  width: 250px;
+  height: 250px;
+  bottom: 10%;
+  left: 50%;
+  animation-delay: 4s;
+}
+
+@keyframes float-shape {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(20px, -20px) scale(1.1);
+  }
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.hero-badge {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  padding: 10px 24px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #A78BFA;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.badge-icon-purple {
+  color: #A78BFA;
+}
+
+.hero-heading {
+  font-size: 72px;
+  font-weight: 800;
+  color: #FAFAFA;
+  line-height: 1.1;
+  margin: 0 0 32px 0;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #FAFAFA 0%, #A78BFA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subheading {
+  font-size: 20px;
+  color: #A1A1AA;
+  line-height: 1.6;
+  max-width: 750px;
+  margin: 0 auto 40px;
+}
+
+.feature-pills {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.feature-pill {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 28px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 200ms ease;
+}
+
+.feature-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+.pill-icon-purple {
+  color: #A78BFA;
+}
+
+.pill-icon-blue {
+  color: #60A5FA;
+}
+
+.pill-icon-yellow {
+  color: #FBBF24;
+}
+
+.feature-pill span {
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+}
+
+/* Search and Filter Bar */
+.search-filter-bar {
+  max-width: 1400px;
+  margin: 0 auto 48px;
+  padding: 0 48px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.search-input-container {
+  flex: 1;
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #71717A;
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  background: #18181B;
+  border: 1.5px solid #27272A;
+  border-radius: 12px;
+  padding: 14px 20px 14px 48px;
+  font-size: 16px;
+  color: #FAFAFA;
+  transition: all 200ms ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #8B5CF6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.search-input::placeholder {
+  color: #71717A;
+}
+
+.filter-button {
+  background: #18181B;
+  border: 1.5px solid #27272A;
+  padding: 14px 24px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #FAFAFA;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.filter-button:hover {
+  border-color: #8B5CF6;
+  background: rgba(139, 92, 246, 0.1);
+}
+
+/* Exam Categories Section */
+.exam-categories-section {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 48px 80px;
+}
+
+.section-header {
+  font-size: 36px;
+  font-weight: 700;
+  color: #FAFAFA;
+  margin: 0 0 32px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-icon-purple {
+  color: #A78BFA;
+}
+
+.exam-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 32px;
+  align-items: stretch;
+}
+
+/* No Results State */
+.no-results {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.no-results-icon {
+  color: #3F3F46;
+  margin-bottom: 24px;
+}
+
+.no-results h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #FAFAFA;
+  margin: 0 0 12px 0;
+}
+
+.no-results p {
+  font-size: 16px;
+  color: #A1A1AA;
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .hero-section {
+    padding: 60px 32px;
+  }
+
+  .hero-heading {
+    font-size: 56px;
+  }
+
+  .search-filter-bar,
+  .exam-categories-section {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+
+  .exam-cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 28px;
+  }
+  
+  .section-header {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 48px 24px;
+  }
+
+  .hero-heading {
+    font-size: 36px;
+  }
+
+  .hero-subheading {
+    font-size: 16px;
+  }
+
+  .feature-pills {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .feature-pill {
+    justify-content: center;
+  }
+
+  .search-filter-bar {
+    flex-direction: column;
+    padding: 0 24px;
+  }
+
+  .filter-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .exam-categories-section {
+    padding: 0 24px 60px;
+  }
+
+  .section-header {
+    font-size: 28px;
+  }
+
+  .exam-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-heading {
+    font-size: 28px;
+  }
+
+  .hero-badge {
+    font-size: 12px;
+    padding: 8px 16px;
+  }
+}

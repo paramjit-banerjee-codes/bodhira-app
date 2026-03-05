@@ -1,265 +1,343 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  BookOpen,
+  FileText,
+  CheckCircle,
+  Trophy,
+  Clock,
+  RefreshCw,
+  Trash2,
+  Search,
+  Filter,
+  ChevronDown,
+  ArrowUpDown
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { profileAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import ConfirmationModal from '../components/ConfirmationModal';
-import './Dashboard.css';
+import StatsCard from '../components/StatsCard';
+import TestsCreatedTable from '../components/TestsCreatedTable';
+import TestsAttemptedTable from '../components/TestsAttemptedTable';
+import './History.css';
 
 export default function History() {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const [attemptedTests, setAttemptedTests] = useState([]);
-  const [createdTests, setCreatedTests] = useState([]);
-  const [loading, setLoading] = useState(true);
+  
+  // State management
+  const [data, setData] = useState({ attemptedTests: null, createdTests: null });
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState('all');
+  const [sortBy, setSortBy] = useState('recent');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [showSortDropdown, setShowSortDropdown] = useState(false);
 
-  useEffect(() => {
-    fetchHistory();
+  const attemptedTests = data?.attemptedTests || [];
+  const createdTests = data?.createdTests || [];
+
+  // Stats calculation
+  const stats = {
+    totalCreated: createdTests.length,
+    totalAttempted: attemptedTests.length,
+    averageScore: attemptedTests.length > 0 
+      ? Math.round(attemptedTests.reduce((sum, t) => sum + (t.percentage || 0), 0) / attemptedTests.length)
+      : 0,
+    totalTimeSpent: attemptedTests.length * 30, // Assume 30min per test
+  };
+
+  const formatTime = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}.${mins}h`;
+  };
+
+  const fetchHistory = useCallback(async (signal) => {
+    try {
+      const response = await profileAPI.getProfile(signal);
+      const responseData = response.data?.data;
+      
+      console.log('📚 History API Response:', response.data);
+      console.log('📚 Extracted data:', responseData);
+      
+      // Handle both response formats
+      const attempted = Array.isArray(responseData?.attemptedTests) ? responseData.attemptedTests : [];
+      const created = Array.isArray(responseData?.createdTests) ? responseData.createdTests : [];
+      
+      console.log('📚 Attempted Tests:', attempted);
+      console.log('📚 Created Tests:', created);
+      
+      // Update state - arrays are now loaded (either with data or empty)
+      setData({
+        attemptedTests: attempted,
+        createdTests: created
+      });
+      setIsRefreshing(false);
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('❌ Failed to fetch history:', error);
+      }
+      
+      // On error, set empty arrays so skeleton hides and shows empty state
+      setData({ attemptedTests: [], createdTests: [] });
+      setIsRefreshing(false);
+    }
   }, []);
 
-  const fetchHistory = async () => {
-    try {
-      const response = await profileAPI.getProfile();
-      const data = response.data?.data;
-      setAttemptedTests(data?.attemptedTests || []);
-      setCreatedTests(data?.createdTests || []);
-    } catch (error) {
-      console.error('Failed to fetch history:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    const abortController = new AbortController();
+    fetchHistory(abortController.signal);
+    
+    return () => abortController.abort();
+  }, [fetchHistory]);
 
   const handleDeleteClick = () => {
     setShowDeleteConfirm(true);
   };
 
+  const refetchHistory = async () => {
+    setIsRefreshing(true);
+    const abortController = new AbortController();
+    await fetchHistory(abortController.signal);
+  };
+
   const confirmDelete = async () => {
     setDeleting(true);
     try {
+      const abortController = new AbortController();
       await profileAPI.deleteAllHistory();
-      // Refetch history from server to confirm deletion
-      await fetchHistory();
+      
+      // Clear data immediately
+      setData({ attemptedTests: [], createdTests: [] });
       setShowDeleteConfirm(false);
-      console.log('All history deleted successfully');
+      
+      // Wait a moment then refetch fresh data
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setIsRefreshing(true);
+      await fetchHistory(abortController.signal);
+      
+      console.log('✅ All history deleted successfully');
     } catch (error) {
-      console.error('Failed to delete history:', error);
+      console.error('❌ Failed to delete history:', error);
       setShowDeleteConfirm(false);
+      
       // Still try to refetch to get fresh data
-      await fetchHistory();
+      const abortController = new AbortController();
+      setIsRefreshing(true);
+      await fetchHistory(abortController.signal);
     } finally {
       setDeleting(false);
     }
   };
 
-  if (loading) {
+  const handleDeleteTest = async (testId) => {
+    if (!window.confirm('Are you sure you want to delete this test?')) return;
+
+    try {
+      // Call API to delete test
+      await fetch(`http://localhost:5000/api/history/test/${testId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      // Update local state
+      setData(prev => ({
+        ...prev,
+        createdTests: prev.createdTests.filter(test => test._id !== testId)
+      }));
+    } catch (error) {
+      console.error('Error deleting test:', error);
+      alert('Failed to delete test');
+    }
+  };
+
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const getFilteredCreatedTests = () => {
+    let filtered = [...createdTests];
+    
+    if (searchQuery) {
+      filtered = filtered.filter(test => 
+        test.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        test.testCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        test.topic?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return filtered;
+  };
+
+  const getFilteredAttemptedTests = () => {
+    let filtered = [...attemptedTests];
+    
+    if (searchQuery) {
+      filtered = filtered.filter(test => 
+        test.testCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        test.topic?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return filtered;
+  };
+
+  // Guard: keep skeleton until BOTH arrays are populated (not null)
+  // Don't check loading state - only check if data is ready
+  if (data?.attemptedTests === null || data?.createdTests === null) {
     return (
-      <div className="skeleton-history-container">
-        {/* Header Skeleton */}
-        <div className="skeleton-history-header"></div>
-
-        {/* Created Tests Section Skeleton */}
-        <div className="skeleton-history-section">
-          <div className="skeleton-history-title"></div>
-          <div className="skeleton-history-table">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="skeleton-history-row"></div>
-            ))}
-          </div>
-        </div>
-
-        {/* Attempted Tests Section Skeleton */}
-        <div className="skeleton-history-section">
-          <div className="skeleton-history-title"></div>
-          <div className="skeleton-history-table">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="skeleton-history-row"></div>
-            ))}
-          </div>
+      <div className="history-container">
+        <div className="loading-state">
+          <RefreshCw size={48} strokeWidth={2} className="loading-spinner" />
+          <p>Loading history...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container" style={{ maxWidth: 1200, paddingTop: 30, paddingBottom: 60 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
-        <h1 style={{ fontSize: 28, margin: 0 }}>📚 History</h1>
-        {(attemptedTests.length > 0 || createdTests.length > 0) && (
-          <button
-            onClick={handleDeleteClick}
-            disabled={deleting}
-            style={{
-              padding: '10px 18px',
-              borderRadius: '8px',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              background: 'rgba(239, 68, 68, 0.1)',
-              color: '#ef4444',
-              fontSize: '13px',
-              fontWeight: '600',
-              cursor: deleting ? 'not-allowed' : 'pointer',
-              transition: 'all 0.3s ease',
-              opacity: deleting ? 0.6 : 1,
-              letterSpacing: '0.3px'
-            }}
-            onMouseEnter={(e) => {
-              if (!deleting) {
-                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
-                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
-              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-            }}
+    <div className="history-container">
+      {/* Page Header */}
+      <div className="history-header">
+        <div className="history-header-left">
+          <BookOpen size={40} strokeWidth={2} className="text-purple-400" />
+          <h1 className="history-title">History</h1>
+        </div>
+
+        <div className="history-header-actions">
+          <button 
+            className="header-action-button" 
+            onClick={refetchHistory}
+            disabled={isRefreshing}
           >
-            {deleting ? '🔄 Deleting...' : '🗑️ Delete All History'}
+            <RefreshCw size={18} strokeWidth={2} />
+            <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
           </button>
-        )}
+
+          {(attemptedTests.length > 0 || createdTests.length > 0) && (
+            <button 
+              className="header-action-button delete-all" 
+              onClick={handleDeleteClick}
+              disabled={deleting}
+            >
+              <Trash2 size={18} strokeWidth={2} className="text-red-400" />
+              <span>{deleting ? 'Deleting...' : 'Delete All History'}</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Created Tests Section */}
-      <div className="card" style={{ marginBottom: 50 }}>
-        <h2 style={{ marginTop: 0, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-          📝 Tests Created
-        </h2>
-        {createdTests.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>
-            <p>No tests created yet. Start creating tests to share with others!</p>
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', minWidth: 700 }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #334155' }}>
-                  <th style={{ padding: 12, textAlign: 'left' }}>Test Title</th>
-                  <th style={{ padding: 12, textAlign: 'center' }}>Code</th>
-                  <th style={{ padding: 12, textAlign: 'center' }}>Topic</th>
-                  <th style={{ padding: 12, textAlign: 'center' }}>Questions</th>
-                  <th style={{ padding: 12, textAlign: 'center' }}>Difficulty</th>
-                  <th style={{ padding: 12, textAlign: 'left' }}>Created</th>
-                  <th style={{ padding: 12, textAlign: 'center' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {createdTests.map((test) => (
-                  <tr key={test._id} style={{ borderBottom: '1px solid #334155' }}>
-                    <td style={{ padding: 12 }}>
-                      <span style={{ fontWeight: 600, color: '#e2e8f0' }}>{test.title || 'Untitled Test'}</span>
-                    </td>
-                    <td style={{ padding: 12, textAlign: 'center', fontFamily: 'monospace', fontWeight: 'bold', color: '#3b82f6' }}>
-                      {test.testCode}
-                    </td>
-                    <td style={{ padding: 12, textAlign: 'center', color: '#cbd5e1' }}>
-                      {test.topic || '—'}
-                    </td>
-                    <td style={{ padding: 12, textAlign: 'center' }}>
-                      {test.totalQuestions}
-                    </td>
-                    <td style={{ padding: 12, textAlign: 'center' }}>
-                      <span style={{
-                        display: 'inline-block',
-                        padding: '4px 8px',
-                        borderRadius: 4,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        background: test.difficulty === 'easy' ? 'rgba(16, 185, 129, 0.1)' : 
-                                     test.difficulty === 'medium' ? 'rgba(245, 158, 11, 0.1)' :
-                                     'rgba(239, 68, 68, 0.1)',
-                        color: test.difficulty === 'easy' ? '#10b981' :
-                               test.difficulty === 'medium' ? '#f59e0b' :
-                               '#ef4444'
-                      }}>
-                        {test.difficulty || 'medium'}
-                      </span>
-                    </td>
-                    <td style={{ padding: 12, fontSize: 13, color: '#94a3b8' }}>
-                      {new Date(test.createdAt).toLocaleDateString()}
-                    </td>
-                    <td style={{ padding: 12, textAlign: 'center' }}>
-                      <Link
-                        to={`/leaderboard?code=${test.testCode}`}
-                        style={{ color: '#3b82f6', textDecoration: 'none', fontSize: 12, fontWeight: 600 }}
-                      >
-                        🏆 Leaderboard
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* Stats Overview */}
+      <div className="stats-grid">
+        <StatsCard
+          icon={FileText}
+          value={stats.totalCreated}
+          label="Tests Created"
+          gradient="linear-gradient(135deg, #3B82F6, #60A5FA)"
+          change="+5 this week"
+          isPositive={true}
+        />
+
+        <StatsCard
+          icon={CheckCircle}
+          value={stats.totalAttempted}
+          label="Tests Attempted"
+          gradient="linear-gradient(135deg, #10B981, #34D399)"
+          change="+3 this week"
+          isPositive={true}
+        />
+
+        <StatsCard
+          icon={Trophy}
+          value={`${stats.averageScore}%`}
+          label="Average Score"
+          gradient="linear-gradient(135deg, #F59E0B, #FBBF24)"
+          change="+8% improvement"
+          isPositive={true}
+        />
+
+        <StatsCard
+          icon={Clock}
+          value={formatTime(stats.totalTimeSpent)}
+          label="Study Time"
+          gradient="linear-gradient(135deg, #8B5CF6, #A78BFA)"
+          change="+45min this week"
+          isPositive={true}
+        />
       </div>
 
-      {/* Attempted Tests Section */}
-      <div className="card">
-        <h2 style={{ marginTop: 0, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-          ✅ Tests Attempted
-        </h2>
-        {attemptedTests.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>
-            <p>No tests attempted yet. Take some tests to see your performance history!</p>
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', minWidth: 700 }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #334155' }}>
-                  <th style={{ padding: 12, textAlign: 'left' }}>Test Code</th>
-                  <th style={{ padding: 12, textAlign: 'left' }}>Topic</th>
-                  <th style={{ padding: 12, textAlign: 'center' }}>Score</th>
-                  <th style={{ padding: 12, textAlign: 'center' }}>Percentage</th>
-                  <th style={{ padding: 12, textAlign: 'center' }}>Result</th>
-                  <th style={{ padding: 12, textAlign: 'left' }}>Date</th>
-                  <th style={{ padding: 12, textAlign: 'center' }}>Review</th>
-                </tr>
-              </thead>
-              <tbody>
-                {attemptedTests.map((test) => {
-                  const isPass = test.percentage >= 60;
-                  return (
-                    <tr key={test._id} style={{ borderBottom: '1px solid #334155' }}>
-                      <td style={{ padding: 12, fontFamily: 'monospace', fontWeight: 'bold', color: '#3b82f6' }}>
-                        {test.testCode}
-                      </td>
-                      <td style={{ padding: 12, color: '#cbd5e1' }}>
-                        {test.topic}
-                      </td>
-                      <td style={{ padding: 12, textAlign: 'center' }}>
-                        {test.score}/{test.totalQuestions}
-                      </td>
-                      <td style={{ padding: 12, textAlign: 'center', fontWeight: 'bold', color: test.percentage >= 80 ? '#10b981' : test.percentage >= 60 ? '#f59e0b' : '#ef4444' }}>
-                        {test.percentage}%
-                      </td>
-                      <td style={{ padding: 12, textAlign: 'center', fontWeight: 'bold' }}>
-                        <span style={{ color: isPass ? '#10b981' : '#ef4444' }}>
-                          {isPass ? '✅ Pass' : '❌ Retake'}
-                        </span>
-                      </td>
-                      <td style={{ padding: 12, fontSize: 13, color: '#94a3b8' }}>
-                        {new Date(test.createdAt).toLocaleDateString()}
-                      </td>
-                      <td style={{ padding: 12, textAlign: 'center' }}>
-                        {test._id ? (
-                          <Link
-                            to={`/results/${test._id}`}
-                            style={{ color: '#3b82f6', textDecoration: 'none', fontSize: 12, fontWeight: 600 }}
-                          >
-                            📋 Details
-                          </Link>
-                        ) : (
-                          <span style={{ color: '#64748b', fontSize: 12 }}>N/A</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+      {/* Filters & Search */}
+      <div className="filters-container">
+        <div className="search-input-container">
+          <Search size={20} strokeWidth={2} className="search-icon" />
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search tests by name, code, or topic..."
+            value={searchQuery}
+            onChange={handleSearch}
+          />
+        </div>
+
+        <div className="filter-dropdown-container">
+          <button 
+            className="filter-button"
+            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+          >
+            <Filter size={20} strokeWidth={2} />
+            <span>
+              {filterType === 'all' ? 'All Tests' : 
+               filterType === 'created' ? 'Created' : 'Attempted'}
+            </span>
+            <ChevronDown size={16} strokeWidth={2} />
+          </button>
+        </div>
+
+        <div className="filter-dropdown-container">
+          <button 
+            className="filter-button"
+            onClick={() => setShowSortDropdown(!showSortDropdown)}
+          >
+            <ArrowUpDown size={20} strokeWidth={2} />
+            <span>
+              {sortBy === 'recent' ? 'Most Recent' : 
+               sortBy === 'oldest' ? 'Oldest First' : 'Highest Score'}
+            </span>
+            <ChevronDown size={16} strokeWidth={2} />
+          </button>
+        </div>
+      </div>
+
+      {/* Tests Created Section */}
+      <div className="history-section">
+        <div className="section-header">
+          <FileText size={28} strokeWidth={2} className="text-blue-400" />
+          <h2 className="section-title">Tests Created</h2>
+        </div>
+
+        <TestsCreatedTable
+          tests={getFilteredCreatedTests()}
+          loading={false}
+          onDelete={handleDeleteTest}
+        />
+      </div>
+
+      {/* Tests Attempted Section */}
+      <div className="history-section">
+        <div className="section-header">
+          <CheckCircle size={28} strokeWidth={2} className="text-green-400" />
+          <h2 className="section-title">Tests Attempted</h2>
+        </div>
+
+        <TestsAttemptedTable
+          tests={getFilteredAttemptedTests()}
+          loading={false}
+        />
       </div>
 
       {/* Delete All History Confirmation Modal */}

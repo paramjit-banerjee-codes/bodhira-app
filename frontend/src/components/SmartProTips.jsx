@@ -31,45 +31,53 @@ export default function SmartProTips() {
   // Rotate tips every 6 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setIsTransitioning(true);
-      setTimeout(() => {
-        setCurrentTipIndex((prev) => (prev + 1) % TIPS.length);
-        setIsTransitioning(false);
-      }, 500);
+      handleNextTip();
     }, 6000);
 
     return () => clearInterval(interval);
   }, []);
 
+  const handleNextTip = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setCurrentTipIndex((prev) => (prev + 1) % TIPS.length);
+      setIsTransitioning(false);
+    }, 300);
+  };
+
+  const progressPercentage = ((currentTipIndex + 1) / TIPS.length) * 100;
+
   return (
     <div className="smart-pro-tips-container">
       <div className="tips-card">
+        {/* Icon and Title */}
         <div className="tips-header">
           <img src="/logo3.png" alt="Bodhira" className="tips-icon-img" />
-          <h3 className="tips-title">Smart Pro Tip</h3>
+          <div className="tips-title-section">
+            <h3 className="tips-title">Smart Pro Tip</h3>
+            <p className="tips-counter">{currentTipIndex + 1} of {TIPS.length}</p>
+          </div>
         </div>
 
+        {/* Tip Content */}
         <div className={`tips-content ${isTransitioning ? 'fade-out' : 'fade-in'}`}>
           <p className="tips-text">{TIPS[currentTipIndex]}</p>
         </div>
 
-        <div className="tips-progress">
-          {TIPS.map((_, idx) => (
-            <div
-              key={idx}
-              className={`progress-dot ${idx === currentTipIndex ? 'active' : ''}`}
-              onClick={() => {
-                setIsTransitioning(true);
-                setTimeout(() => {
-                  setCurrentTipIndex(idx);
-                  setIsTransitioning(false);
-                }, 500);
-              }}
-            />
-          ))}
+        {/* Bottom Section: Progress Bar + Next Button */}
+        <div className="tips-footer">
+          <div className="tips-progress-bar">
+            <div className="progress-bar-bg">
+              <div 
+                className="progress-bar-fill"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+          </div>
+          <button className="next-tip-btn" onClick={handleNextTip} title="Next tip">
+            →
+          </button>
         </div>
-
-        <p className="tips-counter">{currentTipIndex + 1} of {TIPS.length}</p>
       </div>
     </div>
   );

@@ -112,7 +112,6 @@ const testSchema = new mongoose.Schema(
     expiresAt: {
       type: Date,
       default: null,
-      index: true, // Index for efficient expiration queries
     },
   },
   {

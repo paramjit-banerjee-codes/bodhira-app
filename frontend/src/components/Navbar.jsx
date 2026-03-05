@@ -75,6 +75,13 @@ const Navbar = () => {
                 History
               </Link>
               <Link 
+                to="/exam-center" 
+                className={`navbar-link ${isActive('/exam-center') || isActive('/mock-exam') || isActive('/gate-results') || isActive('/gate-history') ? 'navbar-link-active' : ''}`}
+                aria-label="Mock Exams Center"
+              >
+                📚 Mock Exams
+              </Link>
+              <Link 
                 to="/profile" 
                 className={`navbar-link ${isActive('/profile') ? 'navbar-link-active' : ''}`}
               >
@@ -91,25 +98,32 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              <button 
-                onClick={toggleTheme}
-                className="navbar-theme-toggle"
-                title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-              >
-                {isDark ? '☀️' : '🌙'}
-              </button>
-              <Link 
-                to="/login" 
-                className={`navbar-link ${isActive('/login') ? 'navbar-link-active' : ''}`}
-              >
-                Login
-              </Link>
-              <Link 
-                to="/register" 
-                className={`btn btn-primary ${isActive('/register') ? 'navbar-link-active' : ''}`}
-              >
-                Register
-              </Link>
+              <div className="navbar-center-links">
+                <a href="/#features" className="navbar-link">Features</a>
+                <a href="/#pricing" className="navbar-link">Pricing</a>
+                <a href="/#about" className="navbar-link">About</a>
+              </div>
+              <div className="navbar-auth-section">
+                <button 
+                  onClick={toggleTheme}
+                  className="navbar-theme-toggle"
+                  title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                  {isDark ? '☀️' : '🌙'}
+                </button>
+                <Link 
+                  to="/login" 
+                  className="navbar-link navbar-link-login"
+                >
+                  Login
+                </Link>
+                <Link 
+                  to="/register" 
+                  className="btn btn-primary"
+                >
+                  Register
+                </Link>
+              </div>
             </>
           )}
         </div>

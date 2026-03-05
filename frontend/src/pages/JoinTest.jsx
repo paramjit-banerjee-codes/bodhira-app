@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { 
+  Link, Key, Info, ArrowRight, ClipboardList, 
+  Loader2, Check, AlertCircle, Lightbulb 
+} from 'lucide-react';
 import { testAPI } from '../services/api';
 import './JoinTest.css';
 
@@ -8,80 +12,181 @@ const JoinTest = () => {
   const [testCode, setTestCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isValidating, setIsValidating] = useState(false);
+  const [isValid, setIsValid] = useState(false);
+
+  const handleInputChange = (e) => {
+    const value = e.target.value.toUpperCase();
+    setTestCode(value);
+    setError('');
+    setIsValid(false);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    setIsValidating(true);
 
     try {
       console.log('🔍 Checking test code:', testCode);
-      // Validate test code exists and is published
-      const response = await testAPI.getTestByCode(testCode.toUpperCase());
+      const response = await testAPI.getTestByCode(testCode);
       
       console.log('✅ Test found:', response.data);
 
       if (!response.data?.data) {
         console.error('❌ Invalid response format:', response.data);
         setError('Invalid response from server. Please try again.');
+        setIsValidating(false);
         return;
       }
 
-      // Navigate directly using test code - this route doesn't require auth
-      navigate(`/test/code/${testCode.toUpperCase()}`);
+      // Show success state briefly
+      setIsValid(true);
+      setIsValidating(false);
+
+      // Navigate after short delay
+      setTimeout(() => {
+        navigate(`/test/code/${testCode}`);
+      }, 500);
     } catch (err) {
       console.error('❌ Error fetching test:', err);
       const errorMessage = err.response?.data?.error || err.message || 'Invalid test code. Please try again.';
       setError(errorMessage);
+      setIsValidating(false);
+      
+      // Shake animation on error
+      const input = document.querySelector('.test-code-input');
+      if (input) {
+        input.classList.add('shake');
+        setTimeout(() => input.classList.remove('shake'), 500);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container join-container">
-      <div className="join-card card">
-        <div className="join-header">
-          <h1>🔗 Join Test</h1>
-          <p>Enter the test code shared by your teacher</p>
+    <div className="join-test-page">
+      {/* Hero Section */}
+      <div className="join-hero">
+        <div className="hero-icon-container">
+          <div className="hero-icon-glow"></div>
+          <Link className="hero-icon" size={40} />
         </div>
+        <h1 className="hero-title">Join Test</h1>
+        <p className="hero-subtitle">Enter the test code shared by your teacher</p>
+      </div>
 
+      {/* Main Content Card */}
+      <div className="join-content-card">
         <form onSubmit={handleSubmit}>
-          <div className="input-group">
-            <label>Test Code</label>
-            <input
-              type="text"
-              value={testCode}
-              onChange={(e) => setTestCode(e.target.value.toUpperCase())}
-              placeholder="e.g., ABC123XY"
-              required
-              maxLength={8}
-              style={{ 
-                fontSize: '24px', 
-                letterSpacing: '3px', 
-                textAlign: 'center',
-                textTransform: 'uppercase'
-              }}
-            />
-            <small>Enter the 8-character code provided by your teacher</small>
+          {/* Test Code Input Section */}
+          <div className="input-section">
+            <label className="input-label">
+              <Key size={20} />
+              <span>Test Code</span>
+            </label>
+            
+            <div className="input-wrapper">
+              <input
+                type="text"
+                value={testCode}
+                onChange={handleInputChange}
+                placeholder="E.G., ABC123XY"
+                required
+                maxLength={8}
+                className={`test-code-input ${error ? 'error' : ''} ${isValid ? 'valid' : ''}`}
+                disabled={loading}
+              />
+              {isValidating && (
+                <div className="input-icon validating">
+                  <Loader2 size={20} className="spin" />
+                </div>
+              )}
+              {isValid && !isValidating && (
+                <div className="input-icon valid">
+                  <Check size={20} />
+                </div>
+              )}
+              {error && !isValidating && (
+                <div className="input-icon error">
+                  <AlertCircle size={20} />
+                </div>
+              )}
+            </div>
+
+            <div className="input-helper">
+              <Info size={16} />
+              <span>Enter the 8-character code provided by your teacher</span>
+            </div>
+
+            {error && (
+              <div className="error-message-premium">
+                <AlertCircle size={16} />
+                <span>{error}</span>
+              </div>
+            )}
           </div>
 
-          {error && <div className="error-message">{error}</div>}
-
-          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-            {loading ? <span className="loading-spinner"></span> : 'Join Test →'}
+          {/* Join Button */}
+          <button 
+            type="submit" 
+            className="join-button"
+            disabled={loading || !testCode.trim()}
+          >
+            {loading ? (
+              <>
+                <Loader2 size={20} className="spin" />
+                <span>JOINING...</span>
+              </>
+            ) : (
+              <>
+                <span>JOIN TEST</span>
+                <ArrowRight size={20} className="arrow-icon" />
+              </>
+            )}
           </button>
         </form>
 
-        <div className="join-info">
-          <h3>📋 Instructions</h3>
-          <ul>
-            <li>Ask your teacher for the test code</li>
-            <li>Enter the code exactly as provided</li>
-            <li>Click "Join Test" to start</li>
-            <li>Complete the test within the time limit</li>
-            <li>Submit to see your results</li>
-          </ul>
+        {/* Instructions Section */}
+        <div className="instructions-section">
+          <div className="instructions-header">
+            <ClipboardList size={20} />
+            <h3>Instructions</h3>
+          </div>
+          
+          <div className="instructions-list">
+            <div className="instruction-item">
+              <ArrowRight size={16} className="instruction-arrow" />
+              <span>Ask your teacher for the test code</span>
+            </div>
+            <div className="instruction-item">
+              <ArrowRight size={16} className="instruction-arrow" />
+              <span>Enter the code exactly as provided</span>
+            </div>
+            <div className="instruction-item">
+              <ArrowRight size={16} className="instruction-arrow" />
+              <span>Click 'Join Test' to start</span>
+            </div>
+            <div className="instruction-item">
+              <ArrowRight size={16} className="instruction-arrow" />
+              <span>Complete the test within the time limit</span>
+            </div>
+            <div className="instruction-item">
+              <ArrowRight size={16} className="instruction-arrow" />
+              <span>Submit to see your results</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Tips Card */}
+        <div className="quick-tips-card">
+          <div className="tips-header">
+            <Lightbulb size={18} />
+            <span>Quick Tip</span>
+          </div>
+          <p>Test codes are case-insensitive and can include hyphens</p>
         </div>
       </div>
     </div>

@@ -24,26 +24,49 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    checkAuth();
+    // Use AbortController to prevent duplicate requests in StrictMode
+    const abortController = new AbortController();
+    checkAuth(abortController.signal);
+    
+    return () => abortController.abort();
   }, []);
 
-  const checkAuth = async () => {
+  const checkAuth = async (signal) => {
     try {
       const token = localStorage.getItem('token');
-      if (token) {
-        const response = await authAPI.getCurrentUser();
-        // Handle both response formats
-        const userData = response.data.data?.user || response.data.user;
-        console.log('\n✅ ===== AUTH CHECK SUCCESS =====');
-        console.log('User data from API:', userData);
-        console.log('User._id:', userData?._id, 'type:', typeof userData?._id);
-        console.log('==============================\n');
-        setUser(userData);
+      console.log('\n🔍 ===== AUTH CHECK =====');
+      console.log('Token in localStorage:', token ? `${token.substring(0, 20)}...` : 'NONE');
+      
+      if (!token) {
+        console.log('No token found - user is NOT authenticated');
+        setUser(null);
+        setLoading(false);
+        return;
       }
+      
+      console.log('Token found - fetching user data...');
+      const response = await authAPI.getCurrentUser(signal);
+      const userData = response.data.data?.user || response.data.user;
+      
+      if (!userData) {
+        console.error('No user data in response');
+        localStorage.removeItem('token');
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+      
+      console.log('✅ User authenticated:', userData.name);
+      console.log('User._id:', userData._id);
+      console.log('========================\n');
+      setUser(userData);
     } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem('token');
-      setUser(null);
+      // Ignore abort errors from cleanup
+      if (error.name !== 'AbortError') {
+        console.error('❌ Auth check failed:', error.message);
+        localStorage.removeItem('token');
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -53,22 +76,53 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.login({ email, password });
       
-      // Handle response format: response.data.data.token
-      const { token, user } = response.data.data;
+      console.log('\n✅ ===== LOGIN RESPONSE =====');
+      console.log('Full response.data:', response.data);
+      console.log('Full response.data.data:', response.data.data);
       
-      console.log('\n✅ ===== LOGIN SUCCESS =====');
-      console.log('Login response:', response.data.data);
+      // Try multiple response formats
+      let token, user;
+      
+      // Most likely format from backend
+      if (response.data?.data?.token) {
+        token = response.data.data.token;
+        user = response.data.data.user;
+        console.log('✅ Found token in response.data.data');
+      } 
+      // Fallback format
+      else if (response.data?.token) {
+        token = response.data.token;
+        user = response.data.user;
+        console.log('✅ Found token in response.data');
+      } 
+      // Error case
+      else {
+        console.error('❌ NO TOKEN FOUND IN RESPONSE');
+        console.error('response.data keys:', Object.keys(response.data || {}));
+        console.error('response.data.data keys:', Object.keys(response.data?.data || {}));
+        throw new Error('No token in login response');
+      }
+      
+      if (!token) {
+        throw new Error('Token is empty: ' + token);
+      }
+      
+      console.log('Token received:', `${token.substring(0, 20)}...`);
       console.log('User object:', user);
-      console.log('User._id:', user?._id, 'type:', typeof user?._id);
-      console.log('=============================\n');
       
       localStorage.setItem('token', token);
+      const stored = localStorage.getItem('token');
+      console.log('✅ Token stored in localStorage:', stored ? `${stored.substring(0, 20)}...` : 'STORAGE FAILED');
+      
       sessionStorage.setItem(SESSION_KEY, SESSION_ID);
       setUser(user);
       
+      console.log('=============================\n');
+      
       return response.data;
     } catch (error) {
-      console.error('Login error:', error.response?.data || error.message);
+      console.error('❌ Login error:', error.message);
+      console.error('Response error:', error.response?.data);
       throw error;
     }
   };
