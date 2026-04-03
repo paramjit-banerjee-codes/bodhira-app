@@ -2400,10 +2400,9 @@ db.results.createIndex({ studentId: 1, submittedAt: -1 });
 
 ## 📧 Contact & Links
 
-**Developer:** [Your Name]  
-**Email:** your.email@example.com  
-**GitHub:** [github.com/yourusername](https://github.com/yourusername)  
-**LinkedIn:** [linkedin.com/in/yourprofile](https://linkedin.com/in/yourprofile)  
+**Developer:** Paramjit Banerjee
+**Email:** paramjitbanerjeeyt@gmail.com 
+**LinkedIn:** www.linkedin.com/in/paramjit-banerjee-16o
 **Live Demo:** [Coming Soon]  
 
 ---
@@ -2425,6 +2424,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ by a passionate developer learning to build real-world applications.**
+**Built with love by Paramjit Banerjee learning to build real-world applications.**
 
 *Last Updated: March 4, 2026*
